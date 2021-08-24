@@ -8,7 +8,7 @@ Long Distance Touch Lamp!
 /************************** Configuration ***********************************/
 
 #define IO_USERNAME  "liver"
-#define IO_KEY       "" // DO NOT PUBLISH THIS
+#define IO_KEY       ""
 #define LAMP_NAME     "OliviaLamp" // or "AndrewLamp"
 // Simon (Andrew's Lamp) = 1
 // Lampo (Olivia's Lamp) = 2
@@ -64,9 +64,9 @@ AdafruitIO_Feed *lampo = io.feed("lampo");
 #define INITIAL_BRIGHTNESS  120 // initial brightness
 #define MAX_BRIGHTNESS  255 //  max brightness
 #define MIN_BRIGHTNESS  10 //  min brightness
-#define HUE_CHANGE_SPEED 10 // higher number = faster change
-#define SAT_CHANGE_SPEED 25 // higher number = faster change
-#define BRIGHTNESS_CHANGE_SPEED 25 // higher number = faster change
+#define HUE_CHANGE_SPEED 3 // higher number = faster change
+#define SAT_CHANGE_SPEED 15 // higher number = faster change
+#define BRIGHTNESS_CHANGE_SPEED 15 // higher number = faster change
 
 /* FastLED variables*/
 
@@ -86,7 +86,8 @@ int brightness = INITIAL_BRIGHTNESS;
 // when this is HIGH, brightness is increasing
 // LOW = brightness decreasing
 
-int brightnessIncreasing = HIGH;
+boolean brightnessIncreasing = HIGH;
+boolean brightnessIncreasing = HIGH;
 
 /* LAMP MODE
  0 = off
@@ -395,20 +396,19 @@ void loop() {
       brightness = brightness - BRIGHTNESS_CHANGE_SPEED;
     }
     
-    if (brightness == MAX_BRIGHTNESS) {
+    if (brightness >= MAX_BRIGHTNESS) {
       brightnessIncreasing = LOW;
-    } else if (brightness == MIN_BRIGHTNESS) {
+      colour.val = MAX_BRIGHTNESS;
+    } else if (brightness =< MIN_BRIGHTNESS) {
       brightnessIncreasing = HIGH;
+      colour.val = MIN_BRIGHTNESS;
+    } else {
+      colour.val = brightness;
     }
     
-    colour.val = brightness;
     Serial.print("Current brightness: ");
     Serial.println(brightness);
   }
-
-  // save the last state of buttons to use in next loop
-  lastStateTop = currentStateTop;
-  lastStateBottom = currentStateBottom;
 
   /* Handle Modes */
 
@@ -420,7 +420,19 @@ void loop() {
     setColor(); 
   } else if (lampMode==3) {
     // Saturation select
-    colour.sat = (colour.sat + SAT_CHANGE_SPEED) % 256;
+    if (saturationIncreasing == HIGH) {
+      colour.sat = colour.sat + SATURATION_CHANGE_SPEED;
+    } else {
+      colour.sat = colour.sat - SATURATION_CHANGE_SPEED;
+    }
+    
+    if (colour.sat >= 255) { // 255 is max saturation 
+      saturationIncreasing = LOW;
+      colour.sat = 255;
+    } else if (colour.sat =< 0) { // 0 is min saturation
+      saturationIncreasing = HIGH;
+      colour.sat = 0;
+    }
     Serial.println("Current sat");
     Serial.println(colour.sat);
     setColor(); 
@@ -430,6 +442,10 @@ void loop() {
   }
 
   delay(100); // small delay to account for button bounce. // do we need this?
+
+  // save the last state of buttons to use in next loop
+  lastStateTop = currentStateTop;
+  lastStateBottom = currentStateBottom;
 
   FastLED.show();
 }
